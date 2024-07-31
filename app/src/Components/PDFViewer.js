@@ -1,54 +1,96 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { throttle } from "lodash";
 import * as pdfjs from "pdfjs-dist/webpack.mjs";
-import './pdf-viewer.css'
+import "./pdf-viewer.css";
 
-const PDFViewer = ({ url }) => {
+/**
+ * This component wraps the PDFJS library in a react component. The PDFJS library
+ * is VERY sensitive to rerendering.  The library must completely render the PDF internall
+ * BEFORE attempting a re-render.  The useMemo, isLoading, and throttle features assist in
+ * ensuring the all pdf rendering tasks have completed before re-rendering.
+ * @param {string} url - path to pdf to render
+ *
+ * @returns {JSX.Element}
+ */
+const PDFViewer = ({ url, size, className }) => {
   const canvasRef = useRef(null);
   const renderTask = useRef(null);
+  const isLoading = useRef(false);
+  const [containerStyle, setContainerStyle] = useState({});
 
-  const renderCanvas = async (url) => {
-    if (renderTask.current) {
-      renderTask.current.cancel();
-      renderTask.current = null;
-    }
-    console.log(renderTask.current);
-    try {
-      const loadingTask = pdfjs.getDocument(url);
-      const pdf = await loadingTask.promise;
-      const page = await pdf.getPage(1);
-      const scale = 1.5;
-      const viewport = page.getViewport({ scale });
+  const renderCanvas = async (url, size) => {
+    if (!isLoading.current) {
+      isLoading.current = true;
 
-      const canvas = canvasRef.current;
-      const context = canvas.getContext("2d");
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
+      if (renderTask.current) {
+        await renderTask.current.cancel();
+        renderTask.current = null;
+      }
 
-      const renderContext = {
-        canvasContext: context,
-        viewport: viewport,
-      };
+      try {
+        const loadingTask = pdfjs.getDocument(url);
+        const pdf = await loadingTask.promise;
+        const page = await pdf.getPage(1);
+        const scale = 1;
+        const detailFactor = 2;
+        const viewport = page.getViewport({ scale });
 
-      renderTask.current = page.render(renderContext);
-    } catch (error) {
-      console.error("Error loading PDF");
-    } finally {
-      renderTask.current = null;
+        const heightRatio = 11 / 8.5;
+        const { width } = size;
+        const height = width * heightRatio;
+   
+        const canvas = canvasRef.current;
+        const context = canvas.getContext("2d");
+        canvas.height = height <= size.height ? height * detailFactor  : size.height * detailFactor;
+        canvas.width = width * detailFactor;
+
+        setContainerStyle({ height });
+
+        const renderScale = (width / viewport.width) * detailFactor;
+        let renderContext = {
+          canvasContext: context,
+          viewport: page.getViewport({ scale: renderScale }),
+        };
+
+        renderTask.current = page.render(renderContext);
+        renderTask.current.promise.then(
+          () => {
+            isLoading.current = false;
+          },
+          (error) => {
+            console.log("in rejected with error: " + error);
+          }
+        );
+      } catch (error) {
+        console.error("Error loading PDF: " + error);
+      } finally {
+        renderTask.current = null;
+      }
     }
   };
 
-  const throttleRenderCanvas = throttle(renderCanvas, 500);
+  const throttleRenderCanvas = throttle(
+    () => {
+      renderCanvas(url, size);
+    },
+    500,
+    { trailing: true }
+  );
+
   useEffect(() => {
-    console.log("effect called");
-    throttleRenderCanvas(url);
-  }, [throttleRenderCanvas, url]);
+    throttleRenderCanvas(url, size);
+  }, [url, size, throttleRenderCanvas]);
 
   return (
-    <div className="pdf-viewer">
+    <div
+      className="pdf-viewer"
+      style={{
+        height: containerStyle.height + "px",
+      }}
+    >
       <canvas ref={canvasRef}></canvas>
     </div>
   );
 };
 
-export default PDFViewer;
+export default React.memo(PDFViewer);
