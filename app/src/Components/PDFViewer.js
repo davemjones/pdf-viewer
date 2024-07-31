@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { throttle } from "lodash";
 import * as pdfjs from "pdfjs-dist/webpack.mjs";
+import './pdf-viewer.css'
 
 const PDFViewer = ({ url }) => {
   const canvasRef = useRef(null);
@@ -43,7 +44,11 @@ const PDFViewer = ({ url }) => {
     throttleRenderCanvas(url);
   }, [throttleRenderCanvas, url]);
 
-  return <canvas ref={canvasRef}></canvas>;
+  return (
+    <div className="pdf-viewer">
+      <canvas ref={canvasRef}></canvas>
+    </div>
+  );
 };
 
 export default PDFViewer;
