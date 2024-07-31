@@ -1,14 +1,17 @@
 import React from "react";
 import PDFViewer from "./PDFViewer";
 import Controls from './Controls'
+import useResizeObserver from "./useResizeObserver";
 import "./page.css";
 
 function Page() {
-  return (
+  const [viewerRef, viewerSize] = useResizeObserver();
+  // console.table(viewerSize)
+return (
     <>
       <h1>PDFViewer</h1>
       <Controls />
-      <div className="viewer-constraint">
+      <div className="viewer-constraint" ref={viewerRef}>
         <PDFViewer url="./sample1.pdf" />
       </div>
     </>

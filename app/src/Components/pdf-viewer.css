@@ -1,4 +1,5 @@
 .pdf-viewer {
     display: flex;
     border: solid .2em red;
+    width: 100%;
 }
