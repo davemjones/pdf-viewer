@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { throttle } from "lodash";
 import * as pdfjs from "pdfjs-dist/webpack.mjs";
 import "./pdf-viewer.css";
@@ -12,12 +12,13 @@ import "./pdf-viewer.css";
  *
  * @returns {JSX.Element}
  */
-const PDFViewer = ({ url }) => {
+const PDFViewer = ({ url, size, className }) => {
   const canvasRef = useRef(null);
   const renderTask = useRef(null);
   const isLoading = useRef(false);
+  const [containerStyle, setContainerStyle] = useState({});
 
-  const renderCanvas = async (url) => {
+  const renderCanvas = async (url, size) => {
     if (!isLoading.current) {
       isLoading.current = true;
 
@@ -30,17 +31,25 @@ const PDFViewer = ({ url }) => {
         const loadingTask = pdfjs.getDocument(url);
         const pdf = await loadingTask.promise;
         const page = await pdf.getPage(1);
-        const scale = 1.5;
+        const scale = 1;
+        const detailFactor = 2;
         const viewport = page.getViewport({ scale });
 
+        const heightRatio = 11 / 8.5;
+        const { width } = size;
+        const height = width * heightRatio;
+   
         const canvas = canvasRef.current;
         const context = canvas.getContext("2d");
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
+        canvas.height = height <= size.height ? height * detailFactor  : size.height * detailFactor;
+        canvas.width = width * detailFactor;
 
+        setContainerStyle({ height });
+
+        const renderScale = (width / viewport.width) * detailFactor;
         let renderContext = {
           canvasContext: context,
-          viewport: viewport,
+          viewport: page.getViewport({ scale: renderScale }),
         };
 
         renderTask.current = page.render(renderContext);
@@ -62,18 +71,23 @@ const PDFViewer = ({ url }) => {
 
   const throttleRenderCanvas = throttle(
     () => {
-      renderCanvas(url);
+      renderCanvas(url, size);
     },
     500,
     { trailing: true }
   );
 
   useEffect(() => {
-    throttleRenderCanvas(url);
-  }, [url, throttleRenderCanvas]);
+    throttleRenderCanvas(url, size);
+  }, [url, size, throttleRenderCanvas]);
 
   return (
-    <div className="pdf-viewer">
+    <div
+      className="pdf-viewer"
+      style={{
+        height: containerStyle.height + "px",
+      }}
+    >
       <canvas ref={canvasRef}></canvas>
     </div>
   );

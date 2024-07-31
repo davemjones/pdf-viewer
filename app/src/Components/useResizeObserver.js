@@ -6,6 +6,7 @@ const useResizeObserver = () => {
 
   useEffect(() => {
     const observer = new ResizeObserver((entries) => {
+        
       if (entries[0]) {
         const { width, height } = entries[0].contentRect;
         setSize({ width, height });

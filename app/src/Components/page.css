@@ -1,5 +1,8 @@
-.viewer-constraint {
-    display: flex;
-    justify-content: center;
-    width: 50vw;
+.viewer-container {
+  display: flex;
+  justify-content: center;
+  width: 50vw;
+  flex-grow: 1;
+  margin: auto;
+  margin-bottom: 1em;
 }

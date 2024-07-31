@@ -6,12 +6,12 @@ import "./page.css";
 
 function Page() {
   const [viewerRef, viewerSize] = useResizeObserver();
-  // console.table(viewerSize)
+  
 return (
     <>
       <h1>PDFViewer</h1>
       <Controls />
-      <div className="viewer-constraint" ref={viewerRef}>
+      <div className="viewer-container" ref={viewerRef}>
         <PDFViewer url="./sample1.pdf" size={viewerSize}/>
       </div>
     </>
