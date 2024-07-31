@@ -6,10 +6,10 @@ import "./pdf-viewer.css";
 /**
  * This component wraps the PDFJS library in a react component. The PDFJS library
  * is VERY sensitive to rerendering.  The library must completely render the PDF internall
- * BEFORE attempting a re-render.  The useMemo, isLoading, and throttle features assist in 
+ * BEFORE attempting a re-render.  The useMemo, isLoading, and throttle features assist in
  * ensuring the all pdf rendering tasks have completed before re-rendering.
  * @param {string} url - path to pdf to render
- * 
+ *
  * @returns {JSX.Element}
  */
 const PDFViewer = ({ url }) => {
@@ -19,8 +19,8 @@ const PDFViewer = ({ url }) => {
 
   const renderCanvas = async (url) => {
     if (!isLoading.current) {
-      console.log(isLoading)
       isLoading.current = true;
+
       if (renderTask.current) {
         await renderTask.current.cancel();
         renderTask.current = null;
@@ -38,27 +38,38 @@ const PDFViewer = ({ url }) => {
         canvas.height = viewport.height;
         canvas.width = viewport.width;
 
-        const renderContext = {
+        let renderContext = {
           canvasContext: context,
           viewport: viewport,
         };
 
-        renderTask.current = await page.render(renderContext);
+        renderTask.current = page.render(renderContext);
+        renderTask.current.promise.then(
+          () => {
+            isLoading.current = false;
+          },
+          (error) => {
+            console.log("in rejected with error: " + error);
+          }
+        );
       } catch (error) {
-        console.error("Error loading PDF");
+        console.error("Error loading PDF: " + error);
       } finally {
         renderTask.current = null;
-        isLoading.current = false;
       }
     }
   };
 
-  const throttleRenderCanvas = throttle(() => {
-    renderCanvas(url);
-  }, 1000);
+  const throttleRenderCanvas = throttle(
+    () => {
+      renderCanvas(url);
+    },
+    500,
+    { trailing: true }
+  );
 
   useEffect(() => {
-    renderCanvas(url);
+    throttleRenderCanvas(url);
   }, [url, throttleRenderCanvas]);
 
   return (
