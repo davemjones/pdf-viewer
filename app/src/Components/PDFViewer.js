@@ -29,13 +29,6 @@ const PDFViewer = ({ url, size, className }) => {
         renderTask.current = null;
       }
 
-      const renderSize = size;
-      // if (Number(size.height) < 1 && Number(size.width) < 1 && canvasRef.current) {
-        
-      //   renderSize.width = 100;
-      //   renderSize.height = 100;
-      // }
-
       try {
         const loadingTask = pdfjs.getDocument(url);
         const pdf = await loadingTask.promise;
@@ -45,13 +38,13 @@ const PDFViewer = ({ url, size, className }) => {
         const viewport = page.getViewport({ scale });
 
         const heightRatio = 11 / 8.5;
-        const { width } = renderSize;
+        const { width } = size;
         const height = width * heightRatio;
    
         const canvas = canvasRef.current;
         const context = canvas.getContext("2d");
-        canvas.height = height < renderSize.height ? height * detailFactor  : viewerRef.current.offsetHeight;
-        canvas.width = width < renderSize.width ? width * detailFactor : viewerRef.current.offsetWidth * detailFactor;
+        canvas.height = height < size.height ? height * detailFactor  : viewerRef.current.offsetHeight;
+        canvas.width = width < size.width ? width * detailFactor : viewerRef.current.offsetWidth * detailFactor;
 
         height > 0 ? setContainerStyle({ height }) : setContainerStyle({height: canvas.height});
 
