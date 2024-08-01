@@ -14,6 +14,8 @@ import "./pdf-viewer.css";
  */
 const PDFViewer = ({ url, size, className }) => {
   const canvasRef = useRef(null);
+  const viewerRef = useRef(null);
+
   const renderTask = useRef(null);
   const isLoading = useRef(false);
   const [containerStyle, setContainerStyle] = useState({});
@@ -27,6 +29,13 @@ const PDFViewer = ({ url, size, className }) => {
         renderTask.current = null;
       }
 
+      const renderSize = size;
+      // if (Number(size.height) < 1 && Number(size.width) < 1 && canvasRef.current) {
+        
+      //   renderSize.width = 100;
+      //   renderSize.height = 100;
+      // }
+
       try {
         const loadingTask = pdfjs.getDocument(url);
         const pdf = await loadingTask.promise;
@@ -36,15 +45,15 @@ const PDFViewer = ({ url, size, className }) => {
         const viewport = page.getViewport({ scale });
 
         const heightRatio = 11 / 8.5;
-        const { width } = size;
+        const { width } = renderSize;
         const height = width * heightRatio;
    
         const canvas = canvasRef.current;
         const context = canvas.getContext("2d");
-        canvas.height = height <= size.height ? height * detailFactor  : size.height * detailFactor;
-        canvas.width = width * detailFactor;
+        canvas.height = height < renderSize.height ? height * detailFactor  : viewerRef.current.offsetHeight;
+        canvas.width = width < renderSize.width ? width * detailFactor : viewerRef.current.offsetWidth * detailFactor;
 
-        setContainerStyle({ height });
+        height > 0 ? setContainerStyle({ height }) : setContainerStyle({height: canvas.height});
 
         const renderScale = (width / viewport.width) * detailFactor;
         let renderContext = {
@@ -87,6 +96,7 @@ const PDFViewer = ({ url, size, className }) => {
       style={{
         height: containerStyle.height + "px",
       }}
+      ref={viewerRef}
     >
       <canvas ref={canvasRef}></canvas>
     </div>
